@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Night Shift Command Center — Telemetry & Daily Handover</title>
+  <meta name="description"
+    content="Overnight Operations Telemetry, Ticket Triage, SLA Attainment, and Handover Command Center." />
+
+  <!-- Modern Clean Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+
+  <!-- Modular Design System -->
+  <script type="module" crossorigin src="/assets/index-fd2SkAz5.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DygahjeI.css">
+</head>
+
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-icon" title="Night Shift Operations">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+      </div>
+      <div class="brand-info">
+        <h1>
+          <span>Night Shift Command Center</span>
+          <span class="pill pill-primary" style="font-size: 0.65rem;">OPS-READY</span>
+        </h1>
+        <p>Overnight Ops Telemetry, Triage & Daily Handover</p>
+      </div>
+    </div>
+
+    <!-- Header Action Controls -->
+    <div class="header-actions">
+
+      <!-- Date Stepper -->
+      <div class="date-stepper">
+        <button id="prevDayBtn" class="date-stepper-btn" title="Previous Recorded Shift">
+          <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+
+        <div style="display: flex; align-items: center; gap: 4px; padding: 0 4px;">
+          <svg style="width: 14px; height: 14px; color: var(--accent-primary);" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          <input type="date" id="shiftDatePicker" class="date-stepper-input" />
+        </div>
+
+        <button id="nextDayBtn" class="date-stepper-btn" title="Next Recorded Shift">
+          <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- History Archive Modal Button -->
+      <button id="openHistoryBtn" class="btn btn-secondary" title="View Shift Archive">
+        <svg style="color: var(--accent-info);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span>History</span>
+        <span id="historyBadgeCount" class="badge-count">0</span>
+      </button>
+
+      <!-- Import Button -->
+      <button id="openImportBtn" class="btn btn-primary" title="Import Shift Logs">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+        </svg>
+        <span>Daily Import</span>
+      </button>
+
+      <!-- Download Excel Template -->
+      <button id="downloadTemplateBtn" class="btn btn-secondary" title="Download Spreadsheet Template">
+        <svg style="color: var(--accent-success);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+          </path>
+        </svg>
+        <span>Template</span>
+      </button>
+
+      <!-- Copy Handover Summary -->
+      <button id="copyHandoverBtn" class="btn btn-secondary" title="Copy Handover Report to Clipboard">
+        <svg style="color: var(--accent-warning);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+          </path>
+        </svg>
+        <span>Copy Handover</span>
+      </button>
+
+      <!-- Theme Toggle (Twilight Dark / Calm Light) -->
+      <button id="themeToggleBtn" class="btn btn-ghost" title="Toggle Twilight / Light Mode">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z">
+          </path>
+        </svg>
+      </button>
+
+    </div>
+  </header>
+
+  <!-- Main Dashboard Container -->
+  <main class="app-container">
+
+    <!-- Active Shift Metadata Banner -->
+    <section class="shift-meta-banner">
+      <div class="meta-group">
+        <div class="meta-item">
+          <span class="meta-label">Shift Date:</span>
+          <span class="meta-val-highlight">
+            <span class="pulsing-dot"></span>
+            <span id="metaShiftDate">2026-09-20</span>
+          </span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Shift Lead:</span>
+          <button id="metaShiftLead" class="quick-edit-lead" title="Click to quickly edit Shift Lead name">Aarjan
+            Shrestha</button>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Status:</span>
+          <span class="pill pill-success" id="metaShiftStatus">
+            <span style="width: 5px; height: 5px; border-radius: 50%; background-color: var(--accent-success);"></span>
+            Shift Logged
+          </span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 1rem; color: var(--text-secondary);">
+        <span>Logged Shifts: <strong style="color: var(--text-primary);" class="font-mono" id="totalDaysCount">2
+            days</strong></span>
+        <span style="color: var(--border-subtle);">|</span>
+        <div>Source: <span class="font-mono" style="color: var(--text-primary);" id="lastImportTimestamp">Active
+            Database</span></div>
+      </div>
+    </section>
+
+    <!-- 1. TICKETS OVERVIEW & TELEMETRY CHART -->
+    <section class="tickets-and-chart-container">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="card-title">
+          <span class="card-title-dot" style="background-color: var(--accent-primary);"></span>
+          <h2>Tickets Overview</h2>
+        </div>
+        <span class="pill pill-primary" id="ticketResolutionRate">Effective Resolution Rate: 24.6%</span>
+      </div>
+
+      <!-- 6 Key Ticket Stat Tiles -->
+      <div class="tickets-grid">
+        <div class="stat-tile">
+          <div class="stat-tile-label">Received</div>
+          <div class="stat-tile-val" id="valReceived">69</div>
+          <div class="stat-tile-sub">Overnight influx</div>
+        </div>
+
+        <div class="stat-tile" data-variant="success">
+          <div class="stat-tile-label">Resolved & Closed</div>
+          <div class="stat-tile-val" id="valResolvedClosed">11</div>
+          <div class="stat-tile-sub"><span id="valResolvedClosedRatio">15.9%</span> of total</div>
+        </div>
+
+        <div class="stat-tile" data-variant="primary">
+          <div class="stat-tile-label">Waiting Final</div>
+          <div class="stat-tile-val" id="valWaitingFinal">6</div>
+          <div class="stat-tile-sub">Counted as resolved</div>
+        </div>
+
+        <div class="stat-tile" data-variant="ai">
+          <div class="stat-tile-label">Pending Client</div>
+          <div class="stat-tile-val" id="valPendingClient">35</div>
+          <div class="stat-tile-sub">Awaiting customer</div>
+        </div>
+
+        <div class="stat-tile" data-variant="info">
+          <div class="stat-tile-label">Open Active</div>
+          <div class="stat-tile-val" id="valOpen">10</div>
+          <div class="stat-tile-sub">Active in triage</div>
+        </div>
+
+        <div class="stat-tile" data-variant="cyan">
+          <div class="stat-tile-label">Night to Day</div>
+          <div class="stat-tile-val" id="valNightToDay">7</div>
+          <div class="stat-tile-sub"><span id="valNightToDayRatio">10.1%</span> Day verify / External</div>
+        </div>
+
+        <div class="stat-tile" data-variant="warning">
+          <div class="stat-tile-label">Passed (Handover)</div>
+          <div class="stat-tile-val" id="valPassed">17</div>
+          <div class="stat-tile-sub"><span id="valPassedRatio">24.6%</span> Open + Night to Day</div>
+        </div>
+      </div>
+
+      <!-- Night to Day Status Section -->
+      <div class="night-to-day-overview-card" id="nightToDayStatusSection">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+          <div style="display: flex; align-items: center; gap: 0.65rem;">
+            <div style="width: 2.25rem; height: 2.25rem; border-radius: var(--radius-md); background: rgba(6, 182, 212, 0.15); color: #06b6d4; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+              🌙➔☀️
+            </div>
+            <div>
+              <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <span>Night to Day Status</span>
+                <span class="pill" style="background-color: rgba(6, 182, 212, 0.12); color: #06b6d4; border-color: rgba(6, 182, 212, 0.3);">
+                  <span class="pulsing-dot" style="background-color: #06b6d4; width: 5px; height: 5px;"></span>
+                  Handover Triage
+                </span>
+              </div>
+              <p style="font-size: 0.73rem; color: var(--text-secondary); margin-top: 0.15rem;">
+                Night team worked on these tickets, but daytime verification is required or night team reached resolution limits and another team must proceed.
+              </p>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="pill pill-primary" style="font-size: 0.72rem;">
+              Total Night to Day: <strong class="font-mono" style="margin-left: 0.25rem;" id="n2dTotalCount">7</strong>
+            </span>
+            <button id="openN2DImportBtn" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.72rem; display: flex; align-items: center; gap: 0.35rem;" title="Update Night to Day Triage numbers in Import Hub">
+              <span>✏️</span>
+              <span>Update Triage</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2 Subcategory Cards -->
+        <div class="n2d-subgrid">
+          <!-- Subcard A: Needs Day Shift Verification -->
+          <div class="n2d-subcard">
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #38bdf8; flex-shrink: 0;"></span>
+              <div>
+                <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-primary);">Needs Day Shift Verification</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">Night team worked on it; day team must verify in daylight</div>
+              </div>
+            </div>
+            <div class="font-mono" style="font-size: 1.25rem; font-weight: 700; color: #38bdf8;" id="n2dVerifyCount">4</div>
+          </div>
+
+          <!-- Subcard B: Action Needed by Other / External Team -->
+          <div class="n2d-subcard">
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #fbbf24; flex-shrink: 0;"></span>
+              <div>
+                <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-primary);">Action Needed by Other Team</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">Night team cannot do anything further; DBA / DevOps / vendor required</div>
+              </div>
+            </div>
+            <div class="font-mono" style="font-size: 1.25rem; font-weight: 700; color: #fbbf24;" id="n2dExternalCount">3</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Integrated Visual Breakdown Chart -->
+      <div class="chart-card-wrapper">
+        <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+          <div class="chart-canvas-box">
+            <canvas id="ticketDoughnutCanvas"></canvas>
+          </div>
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
+              Shift Triage Breakdown
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-secondary); max-width: 320px;">
+              Visual distribution of overnight ticket resolution stages vs. handover escalations.
+            </p>
+          </div>
+        </div>
+
+        <div class="chart-legend-box">
+          <div class="legend-item">
+            <span class="legend-color-dot" style="background-color: #34d399;"></span>
+            <span>Resolved & Closed</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color-dot" style="background-color: #38bdf8;"></span>
+            <span>Waiting Final</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color-dot" style="background-color: #a78bfa;"></span>
+            <span>Pending Client</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color-dot" style="background-color: #818cf8;"></span>
+            <span>Open in Triage</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color-dot" style="background-color: #06b6d4;"></span>
+            <span>Night to Day</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color-dot" style="background-color: #fbbf24;"></span>
+            <span>Handover Passed</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. RESOLUTION & SLA ATTAINMENT SECTION -->
+    <section>
+      <div class="card-title" style="margin-bottom: 0.75rem;">
+        <span class="card-title-dot" style="background-color: var(--accent-success);"></span>
+        <h2>Resolution & SLA Attainment</h2>
+      </div>
+
+      <div class="resolution-grid">
+        <!-- Resolution % -->
+        <div class="card">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Resolution %</span>
+            <span class="pill pill-success" id="badgeResolution">25%</span>
+          </div>
+          <div class="font-mono"
+            style="font-size: 1.85rem; font-weight: 700; color: var(--accent-success); margin-top: 0.5rem;"
+            id="rateResolution">
+            24.6%
+          </div>
+          <div class="progress-bar-container">
+            <div id="barResolution" class="progress-bar-fill fill-success" style="width: 25%;"></div>
+          </div>
+          <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;">
+            Closed + Resolved + Waiting Final Response
+          </p>
+        </div>
+
+        <!-- Pass % -->
+        <div class="card">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Pass %</span>
+            <span class="pill pill-warning" id="badgePass">84%</span>
+          </div>
+          <div class="font-mono"
+            style="font-size: 1.85rem; font-weight: 700; color: var(--accent-warning); margin-top: 0.5rem;"
+            id="ratePass">
+            84.1%
+          </div>
+          <div class="progress-bar-container">
+            <div id="barPass" class="progress-bar-fill fill-warning" style="width: 84%;"></div>
+          </div>
+          <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;">
+            All tickets except Closed and Resolved
+          </p>
+        </div>
+
+        <!-- SLA Attainment % -->
+        <div class="card">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">SLA Attainment</span>
+            <span class="pill pill-primary" id="badgeSLA">91%</span>
+          </div>
+          <div class="font-mono"
+            style="font-size: 1.85rem; font-weight: 700; color: var(--accent-primary); margin-top: 0.5rem;"
+            id="rateSLA">
+            91.2%
+          </div>
+          <div class="progress-bar-container">
+            <div id="barSLA" class="progress-bar-fill fill-primary" style="width: 91%;"></div>
+          </div>
+          <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;">
+            Compliance across active queues & response benchmarks
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. AI TELEMETRY & GO-LIVE GRID -->
+    <div class="two-col-grid">
+
+      <!-- AI Operations -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="card-title-dot pulsing-dot" style="background-color: var(--accent-ai);"></span>
+            <h3>AI Telemetry & Bot Copilot</h3>
+          </div>
+          <span class="pill pill-ai" id="aiAdoptionBadge">AI Coverage: 81%</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.65rem;">
+          <div class="stat-tile" data-variant="primary" style="padding: 0.75rem;">
+            <div class="stat-tile-label" style="font-size: 0.65rem;">AI Assisted</div>
+            <div class="stat-tile-val" style="font-size: 1.35rem;" id="aiAssisted">56</div>
+          </div>
+          <div class="stat-tile" data-variant="success" style="padding: 0.75rem;">
+            <div class="stat-tile-label" style="font-size: 0.65rem;">AI Accuracy</div>
+            <div class="stat-tile-val" style="font-size: 1.35rem;" id="aiAccuracy">92.9%</div>
+          </div>
+          <div class="stat-tile" data-variant="info" style="padding: 0.75rem;">
+            <div class="stat-tile-label" style="font-size: 0.65rem;">AI Resolved</div>
+            <div class="stat-tile-val" style="font-size: 1.35rem;" id="aiResolution">10</div>
+          </div>
+          <div class="stat-tile" data-variant="ai" style="padding: 0.75rem;">
+            <div class="stat-tile-label" style="font-size: 0.65rem;">Zero Touch</div>
+            <div class="stat-tile-val" style="font-size: 1.35rem;" id="aiZeroTouch">4</div>
+          </div>
+          <div class="stat-tile" data-variant="warning" style="padding: 0.75rem;">
+            <div class="stat-tile-label" style="font-size: 0.65rem;">Human Corrected</div>
+            <div class="stat-tile-val" style="font-size: 1.35rem;" id="aiHumanCorrection">3</div>
+          </div>
+          <div class="stat-tile" data-variant="danger" style="padding: 0.75rem;">
+            <div class="stat-tile-label" style="font-size: 0.65rem;">AI Failures</div>
+            <div class="stat-tile-val" style="font-size: 1.35rem;" id="aiFailures">1</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Go-Live & Releases Tracker -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="card-title-dot" style="background-color: var(--accent-success);"></span>
+            <h3>Go-Live & Production Releases</h3>
+          </div>
+          <span class="pill pill-danger" id="goliveStatusBadge">4 Critical Escalated</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.65rem;">
+          <div class="stat-tile" style="padding: 0.75rem;">
+            <div class="stat-tile-label" style="font-size: 0.65rem;">Conducted</div>
+            <div class="stat-tile-val" style="font-size: 1.35rem;" id="glCount">3</div>
+          </div>
+          <div class="stat-tile" data-variant="primary" style="padding: 0.75rem;">
+            <div class="stat-tile-label" style="font-size: 0.65rem;">Linked Tickets</div>
+            <div class="stat-tile-val" style="font-size: 1.35rem;" id="glTickets">7</div>
+          </div>
+          <div class="stat-tile" data-variant="warning" style="padding: 0.75rem;">
+            <div class="stat-tile-label" style="font-size: 0.65rem;">On-Call Fixes</div>
+            <div class="stat-tile-val" style="font-size: 1.35rem;" id="glOnCall">2</div>
+          </div>
+          <div class="stat-tile" data-variant="danger" style="padding: 0.75rem;">
+            <div class="stat-tile-label" style="font-size: 0.65rem;">Critical Sev-1</div>
+            <div class="stat-tile-val" style="font-size: 1.35rem;" id="glCritical">4</div>
+          </div>
+          <div class="stat-tile" data-variant="success" style="padding: 0.75rem;">
+            <div class="stat-tile-label" style="font-size: 0.65rem;">Shift Resolved</div>
+            <div class="stat-tile-val" style="font-size: 1.35rem;" id="glResolved">0</div>
+          </div>
+          <div class="stat-tile" data-variant="warning" style="padding: 0.75rem;">
+            <div class="stat-tile-label" style="font-size: 0.65rem;">Passed Tickets</div>
+            <div class="stat-tile-val" style="font-size: 1.35rem;" id="glPassed">2</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 4. PASS ANALYSIS & KNOWLEDGE SHARING -->
+    <div class="two-col-grid">
+
+      <!-- Handover Pass Analysis -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="card-title-dot" style="background-color: var(--accent-warning);"></span>
+            <h3>Handover Pass Analysis</h3>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="pill pill-warning" id="passCountHeader">7 Tickets Passed</span>
+            <button id="openPassImportBtn" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">
+              + Import Pass Data
+            </button>
+          </div>
+        </div>
+
+        <div id="passAnalysisContainer" style="margin-bottom: 0.75rem;">
+          <!-- Injected via JavaScript -->
+        </div>
+
+        <div
+          style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; padding-top: 0.5rem; border-top: 1px solid var(--border-subtle);">
+          <div
+            style="padding: 0.65rem 0.85rem; border-radius: var(--radius-md); background-color: var(--bg-surface-elevated); font-size: 0.75rem;">
+            <span style="color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Could Night Shift
+              Resolve?</span>
+            <div class="font-mono" style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="color: var(--accent-success); font-weight: 700;">Yes: <span
+                  id="passCouldResolveYes">2</span></span>
+              <span style="color: var(--border-card);">|</span>
+              <span style="color: var(--accent-danger); font-weight: 700;">No: <span
+                  id="passCouldResolveNo">5</span></span>
+            </div>
+          </div>
+          <div
+            style="padding: 0.65rem 0.85rem; border-radius: var(--radius-md); background-color: var(--bg-surface-elevated); font-size: 0.75rem;">
+            <span style="color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Primary Block / Team
+              Dependency</span>
+            <span class="font-mono" style="color: var(--text-primary); font-weight: 600;"
+              id="passPrimaryDependency">Cloud DevOps & DBA</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Knowledge & Continuous Learning -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="card-title-dot" style="background-color: var(--accent-ai);"></span>
+            <h3>Knowledge & Continuous Learning</h3>
+          </div>
+          <span class="pill pill-ai">Shift Improvements</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 1rem;">
+          <div class="stat-tile" data-variant="danger" style="padding: 0.65rem; text-align: center;">
+            <div class="stat-tile-label" style="justify-content: center; font-size: 0.65rem;">KB Gaps</div>
+            <div class="stat-tile-val" style="font-size: 1.25rem; margin-top: 0.2rem;" id="kbGaps">2</div>
+          </div>
+          <div class="stat-tile" data-variant="success" style="padding: 0.65rem; text-align: center;">
+            <div class="stat-tile-label" style="justify-content: center; font-size: 0.65rem;">KB Created</div>
+            <div class="stat-tile-val" style="font-size: 1.25rem; margin-top: 0.2rem;" id="kbCreated">2</div>
+          </div>
+          <div class="stat-tile" data-variant="warning" style="padding: 0.65rem; text-align: center;">
+            <div class="stat-tile-label" style="justify-content: center; font-size: 0.65rem;">Training</div>
+            <div class="stat-tile-val" style="font-size: 1.25rem; margin-top: 0.2rem;" id="kbTraining">1</div>
+          </div>
+          <div class="stat-tile" data-variant="primary" style="padding: 0.65rem; text-align: center;">
+            <div class="stat-tile-label" style="justify-content: center; font-size: 0.65rem;">Repeat Bugs</div>
+            <div class="stat-tile-val" style="font-size: 1.25rem; margin-top: 0.2rem;" id="kbRepeat">5</div>
+          </div>
+        </div>
+
+        <div
+          style="padding: 0.85rem; border-radius: var(--radius-md); background-color: var(--bg-surface-elevated); border: 1px solid var(--border-subtle);">
+          <span
+            style="font-size: 0.7rem; font-family: var(--font-mono); text-transform: uppercase; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">
+            Key Shift Insights / KB Actions
+          </span>
+          <ul class="knowledge-list" id="kbNotesList">
+            <!-- Injected via JavaScript -->
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 5. TEAM OPERATIONS SECTION -->
+    <section class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="card-title-dot" style="background-color: var(--accent-primary);"></span>
+          <h3>Night Shift Engineering Roster</h3>
+        </div>
+        <span class="pill pill-primary" id="teamActiveCount">4 Engineers Active</span>
+      </div>
+
+      <div class="table-container">
+        <table class="roster-table">
+          <thead>
+            <tr>
+              <th>ENGINEER</th>
+              <th>TICKETS RESOLVED</th>
+              <th>RESOLUTION %</th>
+              <th style="text-align: right;">ASSIGNED ROLE</th>
+            </tr>
+          </thead>
+          <tbody id="teamTableBody">
+            <!-- Injected via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==========================================================================
+       MODAL 1: DATA IMPORT HUB (Excel, Text Notes, Pass Analysis)
+       ========================================================================== -->
+  <div id="importModal" class="modal-backdrop">
+    <div class="modal-box">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="modal-title">
+          <div
+            style="padding: 0.5rem; border-radius: var(--radius-md); background-color: var(--accent-primary-subtle); color: var(--accent-primary);">
+            <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+            </svg>
+          </div>
+          <div>
+            <h3>Daily Shift Data Import Hub</h3>
+            <p>Upload daily spreadsheet, paste handover log notes, or update Pass Analysis</p>
+          </div>
+        </div>
+        <button id="closeImportBtn" class="btn btn-ghost" style="padding: 0.35rem;">
+          <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="tab-nav">
+        <button id="tabBtn_excel" class="tab-btn active" data-tab="excel">
+          <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+            </path>
+          </svg>
+          <span>Excel (.xlsx / .csv)</span>
+        </button>
+        <button id="tabBtn_notes" class="tab-btn" data-tab="notes">
+          <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+            </path>
+          </svg>
+          <span>Shift Notes / Text</span>
+        </button>
+        <button id="tabBtn_pass" class="tab-btn" data-tab="pass">
+          <svg style="width: 16px; height: 16px; color: var(--accent-warning);" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+          </svg>
+          <span>Pass Analysis</span>
+        </button>
+        <button id="tabBtn_n2d" class="tab-btn" data-tab="n2d">
+          <svg style="width: 16px; height: 16px; color: #06b6d4;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+          <span>Night to Day Triage</span>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+
+        <!-- EXCEL TAB -->
+        <div id="tabContent_excel">
+          <div id="excelDropzone" class="dropzone">
+            <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" style="display: none;" />
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.65rem;">
+              <div
+                style="width: 44px; height: 44px; border-radius: 50%; background-color: var(--accent-primary-subtle); color: var(--accent-primary); display: flex; align-items: center; justify-content: center;">
+                <svg style="width: 22px; height: 22px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                </svg>
+              </div>
+              <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">
+                Click to browse or drag & drop daily shift spreadsheet
+              </div>
+              <p style="font-size: 0.75rem; color: var(--text-secondary);" id="selectedExcelName">
+                Supports .xlsx, .xls, or .csv formats
+              </p>
+            </div>
+          </div>
+          <div style="margin-top: 0.75rem; padding: 0.65rem 0.85rem; border-radius: var(--radius-md); background-color: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); font-size: 0.72rem; color: var(--text-secondary); line-height: 1.45;">
+            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.35rem;">
+              <span>💡</span> Auto-recognized columns in Excel:
+            </div>
+            <span><code>Received</code>, <code>Resolved & Closed</code>, <code>Waiting Final</code>, <code>Pending Client</code>, <code>Open</code>, <strong><code>Night to Day</code></strong> (or sub-splits <code>Needs Day Verification</code> & <code>Action Needed by Other Team</code>). Automatically calculates <strong>Passed = Open + Night to Day</strong>.</span>
+          </div>
+        </div>
+
+        <!-- NOTES TAB -->
+        <div id="tabContent_notes" style="display: none; display: flex; flex-direction: column; gap: 0.75rem;">
+          <div
+            style="display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.85rem; background-color: var(--bg-surface-elevated); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+            <label style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">Target Shift Date:</label>
+            <input type="date" id="importTargetDate" class="date-stepper-input"
+              style="border: 1px solid var(--border-card); border-radius: var(--radius-sm); padding: 0.25rem 0.5rem;" />
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <label style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--text-secondary);">Paste Shift
+              Notes Log (Supports Night to Day & Passed = Open + Night to Day):</label>
+            <button id="loadSampleNotesBtn" class="btn btn-ghost"
+              style="padding: 0.2rem 0.4rem; font-size: 0.7rem; color: var(--accent-primary);">Insert Sample
+              Log</button>
+          </div>
+
+          <textarea id="notesImportText" rows="10" class="font-mono"
+            style="width: 100%; padding: 0.75rem; border-radius: var(--radius-md); background-color: var(--bg-card); border: 1px solid var(--border-card); color: var(--text-primary); font-size: 0.75rem; resize: vertical;"
+            placeholder="Paste shift notes or pipe tables here..."></textarea>
+        </div>
+
+        <!-- PASS ANALYSIS TAB -->
+        <div id="tabContent_pass" style="display: none; display: flex; flex-direction: column; gap: 0.75rem;">
+          <div
+            style="padding: 0.75rem; border-radius: var(--radius-md); background-color: var(--accent-warning-subtle); border: 1px solid var(--accent-warning-border); font-size: 0.75rem; color: var(--accent-warning);">
+            <strong>Separate Pass Analysis Import:</strong> Update reasons, blockers, and team dependencies for active
+            shift (<span class="font-mono" style="font-weight: 700;" id="passTabTargetDate">2026-09-20</span>) without
+            affecting ticket counts.
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <label style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--text-secondary);">Paste Pass
+              Breakdown (Pipe format):</label>
+            <button id="loadSamplePassBtn" class="btn btn-ghost"
+              style="padding: 0.2rem 0.4rem; font-size: 0.7rem; color: var(--accent-warning);">Insert Sample
+              Pass</button>
+          </div>
+
+          <textarea id="passAnalysisImportText" rows="8" class="font-mono"
+            style="width: 100%; padding: 0.75rem; border-radius: var(--radius-md); background-color: var(--bg-card); border: 1px solid var(--border-card); color: var(--text-primary); font-size: 0.75rem; resize: vertical;"
+            placeholder="Reason | Count | Team Dependency&#10;Awaiting Client Database Approval | 3 | Client DevOps&#10;Could Resolve: Yes: 2 | No: 5&#10;Primary Dependency: Cloud DevOps & DBA"></textarea>
+        </div>
+
+        <!-- NIGHT TO DAY TRIAGE TAB -->
+        <div id="tabContent_n2d" style="display: none; display: flex; flex-direction: column; gap: 0.75rem;">
+          <div
+            style="padding: 0.75rem; border-radius: var(--radius-md); background-color: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); font-size: 0.75rem; color: var(--text-primary);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+              <strong style="color: #06b6d4; display: flex; align-items: center; gap: 0.4rem;">
+                <span>🌙➔☀️</span> Night to Day Handover Triage
+              </strong>
+              <span class="pill pill-primary" id="n2dTabTargetDate">2026-09-20</span>
+            </div>
+            <div>
+              Tickets where the night team worked on them, but daylight verification is required or night team reached resolution limits and another team (DBA, DevOps, vendor) must act.
+            </div>
+            <div style="margin-top: 0.35rem; font-size: 0.72rem; color: var(--accent-warning); font-weight: 600;">
+              ℹ️ Core Rule: Passed Tickets = Open Active + Night to Day
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
+            <div style="background-color: var(--bg-surface-elevated); padding: 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+              <label style="font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.35rem;">
+                Total Night to Day
+              </label>
+              <input type="number" id="n2dInputTotal" min="0" class="font-mono"
+                style="width: 100%; padding: 0.4rem 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card); background-color: var(--bg-card); color: var(--text-primary); font-size: 1.1rem; font-weight: 700;" />
+              <span style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.2rem; display: block;">Combined handover</span>
+            </div>
+
+            <div style="background-color: var(--bg-surface-elevated); padding: 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+              <label style="font-size: 0.72rem; font-weight: 600; color: #38bdf8; display: block; margin-bottom: 0.35rem;">
+                Needs Day Verification
+              </label>
+              <input type="number" id="n2dInputVerify" min="0" class="font-mono"
+                style="width: 100%; padding: 0.4rem 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card); background-color: var(--bg-card); color: var(--text-primary); font-size: 1.1rem; font-weight: 700;" />
+              <span style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.2rem; display: block;">Night worked; day verify</span>
+            </div>
+
+            <div style="background-color: var(--bg-surface-elevated); padding: 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+              <label style="font-size: 0.72rem; font-weight: 600; color: #fbbf24; display: block; margin-bottom: 0.35rem;">
+                Action by Other Team
+              </label>
+              <input type="number" id="n2dInputExternal" min="0" class="font-mono"
+                style="width: 100%; padding: 0.4rem 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card); background-color: var(--bg-card); color: var(--text-primary); font-size: 1.1rem; font-weight: 700;" />
+              <span style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.2rem; display: block;">DBA / DevOps / Vendor</span>
+            </div>
+          </div>
+
+          <div style="background-color: var(--bg-surface-elevated); padding: 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+              <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">
+                Handover Triage Notes / Details:
+              </label>
+            </div>
+            <textarea id="n2dInputNotes" rows="3" class="font-mono"
+              style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); background-color: var(--bg-card); border: 1px solid var(--border-card); color: var(--text-primary); font-size: 0.75rem; resize: vertical;"
+              placeholder="e.g. 4 tickets need UI verification under live user traffic; 3 blocked on DBA schema migration."></textarea>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button id="resetFactoryDemoBtn" class="btn btn-ghost"
+          style="color: var(--text-muted); text-decoration: underline; font-size: 0.75rem;">
+          Reset to Factory Demo
+        </button>
+        <div style="display: flex; gap: 0.5rem;">
+          <button id="cancelImportBtn" class="btn btn-secondary">Cancel</button>
+          <button id="processImportBtn" class="btn btn-primary">Apply & Save to Date</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 2: SHIFT HISTORY ARCHIVE & SEARCH
+       ========================================================================== -->
+  <div id="historyModal" class="modal-backdrop">
+    <div class="modal-box" style="max-width: 780px;">
+
+      <div class="modal-header">
+        <div class="modal-title">
+          <div
+            style="padding: 0.5rem; border-radius: var(--radius-md); background-color: var(--accent-info-subtle); color: var(--accent-info);">
+            <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3>Shift History Archive</h3>
+            <p>Browse, search, or switch between all historical shifts recorded in browser storage</p>
+          </div>
+        </div>
+        <button id="closeHistoryBtn" class="btn btn-ghost" style="padding: 0.35rem;">
+          <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div
+        style="padding: 0.85rem 1.5rem; background-color: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">
+          Total Logged Shifts: <strong class="font-mono" style="color: var(--text-primary);" id="archiveCountDisplay">2
+            Days</strong>
+        </span>
+        <input type="text" id="archiveSearchInput" placeholder="Search date (YYYY-MM-DD) or lead..."
+          style="padding: 0.4rem 0.75rem; border-radius: var(--radius-md); background-color: var(--bg-card); border: 1px solid var(--border-card); color: var(--text-primary); font-size: 0.8rem; width: 260px;" />
+      </div>
+
+      <div class="modal-body" id="historyCardsContainer" style="gap: 0.75rem;">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <div class="modal-footer">
+        <span style="font-size: 0.75rem; color: var(--text-muted);">
+          Click on any shift card to immediately load that day's dashboard telemetry.
+        </span>
+        <button id="closeHistoryFooterBtn" class="btn btn-secondary">Close</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Application Bootstrap -->
+</body>
+
+</html>
