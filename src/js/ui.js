@@ -6,6 +6,7 @@ import { calculateMetrics } from './metrics.js';
 import { updateTicketChart } from './charts.js';
 import { parseExcelBuffer, parseNotesText, parsePassAnalysisText } from './parser.js';
 import { downloadExcelTemplate, copyHandoverToClipboard } from './export.js';
+import { testCloudConnection } from './cloudStore.js';
 
 function safeSetText(id, value) {
   const el = document.getElementById(id);
@@ -47,6 +48,50 @@ export function renderDashboard(shift, store) {
   const totalDays = Object.keys(store.shifts).length;
   safeSetText('totalDaysCount', `${totalDays} ${totalDays === 1 ? 'day' : 'days'}`);
   safeSetText('historyBadgeCount', totalDays);
+
+  // Cloud Sync Status Indicator
+  const sync = store.syncStatus || { state: 'local_only', message: 'Local Storage Only' };
+  const dot = document.getElementById('cloudSyncStatusDot');
+  const text = document.getElementById('cloudSyncStatusText');
+  const metaBadge = document.getElementById('cloudSyncMetaBadge');
+  const modalDot = document.getElementById('cloudSyncModalDot');
+  const modalTitle = document.getElementById('cloudSyncModalStatusTitle');
+  const modalLastTime = document.getElementById('cloudSyncLastTime');
+
+  let dotColor = 'var(--accent-warning)';
+  let statusLabel = 'Local Storage';
+  if (sync.state === 'synced') {
+    dotColor = 'var(--accent-success)';
+    statusLabel = 'Cloud: Synced';
+  } else if (sync.state === 'syncing') {
+    dotColor = '#38bdf8';
+    statusLabel = 'Syncing...';
+  } else if (sync.state === 'error') {
+    dotColor = 'var(--accent-danger)';
+    statusLabel = 'Sync Error';
+  }
+
+  if (dot) dot.style.backgroundColor = dotColor;
+  if (text) text.textContent = statusLabel;
+  if (modalDot) modalDot.style.backgroundColor = dotColor;
+  if (modalTitle) modalTitle.textContent = sync.message || statusLabel;
+  if (modalLastTime) modalLastTime.textContent = sync.lastSync ? `Last synced: ${sync.lastSync}` : 'Not synced to cloud yet';
+
+  if (metaBadge) {
+    if (sync.state === 'synced') {
+      metaBadge.textContent = `Cloud: ${sync.provider} (${sync.lastSync || 'Live'})`;
+      metaBadge.className = 'pill pill-success';
+    } else if (sync.state === 'syncing') {
+      metaBadge.textContent = 'Cloud: Syncing...';
+      metaBadge.className = 'pill pill-primary';
+    } else if (sync.state === 'error') {
+      metaBadge.textContent = 'Cloud: Sync Error';
+      metaBadge.className = 'pill pill-danger';
+    } else {
+      metaBadge.textContent = 'Cloud: Local Storage';
+      metaBadge.className = 'pill pill-primary';
+    }
+  }
 
   // 2. Tickets Overview
   safeSetText('valReceived', m.received);
@@ -362,6 +407,131 @@ export function setupEventListeners(store) {
     const x = Math.max(0, tot - v);
     if (inputVerify) inputVerify.value = v;
     if (inputExternal) inputExternal.value = x;
+  });
+
+  // Cloud Sync Modal Listeners
+  const syncModalId = 'cloudSyncModal';
+  const providerSelect = document.getElementById('cloudProviderSelect');
+  const fbFields = document.getElementById('firebaseConfigFields');
+  const jsonbinFields = document.getElementById('jsonbinConfigFields');
+  const apiFields = document.getElementById('apiConfigFields');
+
+  const updateProviderFieldsVisibility = (provider) => {
+    if (fbFields) fbFields.style.display = provider === 'firebase' ? 'flex' : 'none';
+    if (jsonbinFields) jsonbinFields.style.display = provider === 'jsonbin' ? 'flex' : 'none';
+    if (apiFields) apiFields.style.display = provider === 'api' ? 'flex' : 'none';
+  };
+
+  providerSelect?.addEventListener('change', (e) => {
+    updateProviderFieldsVisibility(e.target.value);
+  });
+
+  const populateCloudSyncModal = () => {
+    const cfg = store.cloudConfig || { provider: 'none' };
+    if (providerSelect) {
+      providerSelect.value = cfg.provider || 'none';
+      updateProviderFieldsVisibility(providerSelect.value);
+    }
+    const fbProj = document.getElementById('fbProjectIdInput');
+    const fbKey = document.getElementById('fbApiKeyInput');
+    const jbId = document.getElementById('jsonbinIdInput');
+    const jbKey = document.getElementById('jsonbinKeyInput');
+
+    if (fbProj) fbProj.value = cfg.firebaseProjectId || '';
+    if (fbKey) fbKey.value = cfg.firebaseApiKey || '';
+    if (jbId) jbId.value = cfg.jsonBinId || '';
+    if (jbKey) jbKey.value = cfg.jsonBinKey || '';
+  };
+
+  document.getElementById('openCloudSyncBtn')?.addEventListener('click', () => {
+    populateCloudSyncModal();
+    openModal(syncModalId);
+  });
+
+  document.getElementById('closeCloudSyncBtn')?.addEventListener('click', () => closeModal(syncModalId));
+  document.getElementById('cancelCloudSyncBtn')?.addEventListener('click', () => closeModal(syncModalId));
+
+  // Manual Sync Now
+  document.getElementById('manualSyncNowBtn')?.addEventListener('click', async () => {
+    showToast("Synchronizing with cloud...", "info");
+    const res = await store.syncFromCloud(true);
+    if (res.success) {
+      showToast(`Cloud sync complete! ${res.count} shifts verified.`, "success");
+    } else {
+      showToast(res.error || "Sync failed. Check settings.", "error");
+    }
+  });
+
+  // Test Connection Button
+  document.getElementById('testCloudConnectionBtn')?.addEventListener('click', async () => {
+    const provider = providerSelect?.value || 'none';
+    const config = {
+      provider,
+      firebaseProjectId: document.getElementById('fbProjectIdInput')?.value?.trim() || '',
+      firebaseApiKey: document.getElementById('fbApiKeyInput')?.value?.trim() || '',
+      jsonBinId: document.getElementById('jsonbinIdInput')?.value?.trim() || '',
+      jsonBinKey: document.getElementById('jsonbinKeyInput')?.value?.trim() || '',
+      apiUrl: '/api/shifts'
+    };
+
+    showToast("Testing cloud connection...", "info");
+    const res = await testCloudConnection(config);
+    if (res.success) {
+      showToast(res.message, "success");
+    } else {
+      showToast(`Connection failed: ${res.message}`, "error");
+    }
+  });
+
+  // Save Cloud Sync Config
+  document.getElementById('saveCloudSyncBtn')?.addEventListener('click', async () => {
+    const provider = providerSelect?.value || 'none';
+    const config = {
+      provider,
+      firebaseProjectId: document.getElementById('fbProjectIdInput')?.value?.trim() || '',
+      firebaseApiKey: document.getElementById('fbApiKeyInput')?.value?.trim() || '',
+      jsonBinId: document.getElementById('jsonbinIdInput')?.value?.trim() || '',
+      jsonBinKey: document.getElementById('jsonbinKeyInput')?.value?.trim() || '',
+      apiUrl: '/api/shifts',
+      autoSync: provider !== 'none'
+    };
+
+    showToast("Connecting and synchronizing with cloud backend...", "info");
+    const res = await store.setCloudConfig(config);
+    if (res.success) {
+      closeModal(syncModalId);
+      showToast(provider !== 'none' ? "Cloud backend connected! Shifts synchronized." : "Set to local storage only.", "success");
+    } else {
+      showToast(res.error || "Failed to sync. Please verify credentials.", "error");
+    }
+  });
+
+  // Copy Manager Direct Sync Link
+  document.getElementById('copyManagerSyncLinkBtn')?.addEventListener('click', async () => {
+    const cfg = store.cloudConfig;
+    if (!cfg || cfg.provider === 'none') {
+      showToast("Please configure and save a cloud backend first!", "error");
+      return;
+    }
+
+    const base = window.location.origin + window.location.pathname;
+    let shareUrl = `${base}?sync_provider=${cfg.provider}`;
+    if (cfg.provider === 'firebase') {
+      shareUrl += `&fb_proj=${encodeURIComponent(cfg.firebaseProjectId || '')}`;
+      if (cfg.firebaseApiKey) shareUrl += `&fb_key=${encodeURIComponent(cfg.firebaseApiKey)}`;
+    } else if (cfg.provider === 'jsonbin') {
+      shareUrl += `&bin_id=${encodeURIComponent(cfg.jsonBinId || '')}`;
+      if (cfg.jsonBinKey) shareUrl += `&bin_key=${encodeURIComponent(cfg.jsonBinKey)}`;
+    } else if (cfg.provider === 'api') {
+      shareUrl += `&api_url=${encodeURIComponent(cfg.apiUrl || '/api/shifts')}`;
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showToast("Copied Manager link! Opening this link on her device auto-connects to this cloud data.", "success");
+    } catch (e) {
+      prompt("Copy this manager direct link:", shareUrl);
+    }
   });
 
   // Reset to Factory Demo

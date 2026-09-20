@@ -70,4 +70,19 @@ console.assert(handoverText.includes("Influx / Received: 69"), "Influx missing i
 console.assert(handoverText.includes("Night to Day (Day Verify/External): 7"), "Night to Day missing in handover text");
 console.log("✓ Handover text generator passed.");
 
+// 6. Test Cloud Store & Multi-Device Sync Architecture
+import { getStoredCloudConfig, testCloudConnection } from './src/js/cloudStore.js';
+import { store } from './src/js/state.js';
+
+const cloudCfg = getStoredCloudConfig();
+console.assert(typeof cloudCfg === 'object', "Cloud config should be object");
+console.assert(typeof store.syncStatus === 'object', "Store syncStatus should be object");
+console.assert(store.syncStatus.state !== undefined, "Store syncStatus state should be defined");
+
+// Test validation error when credentials missing
+const testResult = await testCloudConnection({ provider: 'firebase', firebaseProjectId: '' });
+console.assert(testResult.success === false, "Should fail when Project ID missing");
+console.log("✓ Cloud Store & Multi-Device sync validation passed.");
+
 console.log("--- ALL TESTS PASSED SUCCESSFULLY! ---");
+

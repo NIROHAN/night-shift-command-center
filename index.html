@@ -108,6 +108,15 @@
         <span>Copy Handover</span>
       </button>
 
+      <!-- Cloud Sync Status & Settings (Multi-Device Sharing) -->
+      <button id="openCloudSyncBtn" class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.45rem;" title="Cloud Sync & Multi-Device Sharing">
+        <svg style="width: 15px; height: 15px; color: #38bdf8;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z"></path>
+        </svg>
+        <span id="cloudSyncStatusDot" class="pulsing-dot" style="background-color: var(--accent-success); width: 6px; height: 6px;"></span>
+        <span id="cloudSyncStatusText" style="font-size: 0.78rem;">Cloud Sync</span>
+      </button>
+
       <!-- Theme Toggle (Twilight Dark / Calm Light) -->
       <button id="themeToggleBtn" class="btn btn-ghost" title="Toggle Twilight / Light Mode">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -147,12 +156,15 @@
         </div>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 1rem; color: var(--text-secondary);">
+      <div style="display: flex; align-items: center; gap: 1rem; color: var(--text-secondary); flex-wrap: wrap;">
         <span>Logged Shifts: <strong style="color: var(--text-primary);" class="font-mono" id="totalDaysCount">2
             days</strong></span>
         <span style="color: var(--border-subtle);">|</span>
-        <div>Source: <span class="font-mono" style="color: var(--text-primary);" id="lastImportTimestamp">Active
-            Database</span></div>
+        <div style="display: flex; align-items: center; gap: 0.35rem;">
+          <span>Source:</span>
+          <span class="font-mono" style="color: var(--text-primary);" id="lastImportTimestamp">Active Database</span>
+          <span id="cloudSyncMetaBadge" class="pill pill-primary" style="font-size: 0.65rem; padding: 0.1rem 0.45rem;">Cloud: Local</span>
+        </div>
       </div>
     </section>
 
@@ -844,6 +856,124 @@
         <button id="closeHistoryFooterBtn" class="btn btn-secondary">Close</button>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 3: CLOUD SYNC & MULTI-DEVICE SHARING
+       ========================================================================== -->
+  <div id="cloudSyncModal" class="modal-backdrop">
+    <div class="modal-box" style="max-width: 640px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <div style="padding: 0.5rem; border-radius: var(--radius-md); background-color: rgba(56, 189, 248, 0.15); color: #38bdf8;">
+            <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3>Cloud Sync & Multi-Device Sharing</h3>
+            <p>Synchronize shift logs and Night-to-Day triage across your manager and team devices</p>
+          </div>
+        </div>
+        <button id="closeCloudSyncBtn" class="btn btn-ghost" style="padding: 0.35rem;">
+          <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+        <!-- Status Box -->
+        <div id="cloudSyncBanner" style="padding: 0.85rem 1rem; border-radius: var(--radius-md); background-color: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+          <div>
+            <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Current Sync Status</div>
+            <div id="cloudSyncStatusSummary" style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-top: 0.2rem; display: flex; align-items: center; gap: 0.4rem;">
+              <span id="cloudSyncModalDot" class="pulsing-dot" style="background-color: var(--accent-warning); width: 7px; height: 7px;"></span>
+              <span id="cloudSyncModalStatusTitle">Local Storage Only</span>
+            </div>
+            <div id="cloudSyncLastTime" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">
+              Not synced to cloud yet
+            </div>
+          </div>
+          <button id="manualSyncNowBtn" class="btn btn-primary" style="padding: 0.35rem 0.8rem; font-size: 0.75rem;">
+            🔄 Sync Now
+          </button>
+        </div>
+
+        <!-- Provider Selector -->
+        <div>
+          <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.35rem;">
+            Select Cloud Backend:
+          </label>
+          <select id="cloudProviderSelect" class="date-stepper-input" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card); background-color: var(--bg-card); color: var(--text-primary); font-size: 0.85rem;">
+            <option value="firebase">Google Firebase Firestore (Real-Time, Free Spark Tier)</option>
+            <option value="api">Vercel Serverless Function (/api/shifts with KV / Upstash)</option>
+            <option value="jsonbin">JSONBin.io (Free Cloud JSON Store)</option>
+            <option value="none">Local Storage Only (Single Device)</option>
+          </select>
+        </div>
+
+        <!-- Firebase Fields -->
+        <div id="firebaseConfigFields" style="display: flex; flex-direction: column; gap: 0.65rem; background-color: var(--bg-surface-elevated); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <div style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.4;">
+            <strong style="color: var(--text-primary);">Google Firebase Firestore Setup:</strong> Uses standard Firestore REST. Free Spark tier allows 50,000 reads and 20,000 writes/day with zero credit card.
+          </div>
+          <div>
+            <label style="font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Firebase Project ID:</label>
+            <input type="text" id="fbProjectIdInput" class="font-mono" style="width: 100%; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card); background-color: var(--bg-card); color: var(--text-primary); font-size: 0.8rem;" placeholder="e.g. night-shift-command" />
+          </div>
+          <div>
+            <label style="font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Web API Key (Optional):</label>
+            <input type="password" id="fbApiKeyInput" class="font-mono" style="width: 100%; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card); background-color: var(--bg-card); color: var(--text-primary); font-size: 0.8rem;" placeholder="AIzaSy..." />
+          </div>
+        </div>
+
+        <!-- JSONBin Fields -->
+        <div id="jsonbinConfigFields" style="display: none; flex-direction: column; gap: 0.65rem; background-color: var(--bg-surface-elevated); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <div style="font-size: 0.74rem; color: var(--text-secondary);">
+            Enter JSONBin.io v3 Bin ID and Master Key:
+          </div>
+          <div>
+            <label style="font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Bin ID:</label>
+            <input type="text" id="jsonbinIdInput" class="font-mono" style="width: 100%; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card); background-color: var(--bg-card); color: var(--text-primary); font-size: 0.8rem;" placeholder="e.g. 64b1234..." />
+          </div>
+          <div>
+            <label style="font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">X-Master-Key:</label>
+            <input type="password" id="jsonbinKeyInput" class="font-mono" style="width: 100%; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card); background-color: var(--bg-card); color: var(--text-primary); font-size: 0.8rem;" placeholder="$2a$10$..." />
+          </div>
+        </div>
+
+        <!-- Vercel API Fields -->
+        <div id="apiConfigFields" style="display: none; flex-direction: column; gap: 0.65rem; background-color: var(--bg-surface-elevated); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <div style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.45;">
+            Uses Vercel serverless function <code>/api/shifts</code>. To enable cross-device persistence, add Vercel KV or Upstash Redis to your Vercel project environment variables (<code>KV_REST_API_URL</code> & <code>KV_REST_API_TOKEN</code>).
+          </div>
+        </div>
+
+        <!-- Quick Share with Manager Link -->
+        <div style="background-color: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); padding: 0.75rem 0.85rem; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;">
+          <div>
+            <div style="font-size: 0.78rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 0.35rem;">
+              <span>🔗</span> Share Link with Manager
+            </div>
+            <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.15rem;">
+              Generate a link that automatically configures her device to view these same synchronized shifts.
+            </div>
+          </div>
+          <button id="copyManagerSyncLinkBtn" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.72rem; white-space: nowrap;">
+            📋 Copy Manager Link
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="testCloudConnectionBtn" class="btn btn-secondary">Test Connection</button>
+        <div style="display: flex; gap: 0.5rem;">
+          <button id="cancelCloudSyncBtn" class="btn btn-ghost">Cancel</button>
+          <button id="saveCloudSyncBtn" class="btn btn-primary">Save & Connect</button>
+        </div>
+      </div>
     </div>
   </div>
 
